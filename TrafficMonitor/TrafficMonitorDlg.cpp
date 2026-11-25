@@ -1403,7 +1403,6 @@ void CTrafficMonitorDlg::DoMonitorAcquisition()
 #endif
 
     bool cpu_freq_acquired = false;
-    bool gpu_usage_acquired = false;
     m_get_disk_usage_by_pdh = false;
 
     //获取CPU使用率
@@ -1418,8 +1417,14 @@ void CTrafficMonitorDlg::DoMonitorAcquisition()
 
     theApp.m_gpu_memory_usage = m_gpu_memory_usage_helper.GetUsage();
 
-    //获取GPU利用率
-    if (lite_version /*|| is_arm64ec*/ || !theApp.m_general_data.IsHardwareEnable(HI_GPU))
+    // NVIDIA 显卡使用与 nvidia-smi 相同的 GPU 利用率口径。
+    const auto nvidia_gpu_usage = GetNvidiaGpuUsage();
+    bool gpu_usage_acquired = nvidia_gpu_usage.has_value() || m_gpu_memory_usage_helper.HasNvidiaAdapter();
+    if (gpu_usage_acquired)
+    {
+        theApp.m_gpu_usage = nvidia_gpu_usage.value_or(-1);
+    }
+    else if (lite_version /*|| is_arm64ec*/ || !theApp.m_general_data.IsHardwareEnable(HI_GPU))
     {
         if (m_gpu_usage_helper.GetGpuUsage(theApp.m_gpu_usage))
             gpu_usage_acquired = true;

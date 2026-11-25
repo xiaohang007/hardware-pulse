@@ -1,10 +1,10 @@
 ﻿<root>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <GitHub>
         <link_without_temperature_x64>https://github.com/xiaohang007/hardware-pulse/releases/latest/download/HardwarePulse-x64.zip</link_without_temperature_x64>
     </GitHub>
     <update_contents>
-        <contents_zh_cn>首个版本默认启用五格硬件看板和 12 号彩色竖条皮肤。</contents_zh_cn>
-        <contents_en>The first release opens with the five-metric dashboard and Skin 12.</contents_en>
+        <contents_zh_cn>NVIDIA 显卡的 GPU 占用现在与 nvidia-smi 使用同一统计口径。</contents_zh_cn>
+        <contents_en>NVIDIA GPU usage now uses the same utilization metric as nvidia-smi.</contents_en>
     </update_contents>
 </root>

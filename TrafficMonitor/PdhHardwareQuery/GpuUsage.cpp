@@ -3,6 +3,106 @@
 
 #pragma comment(lib, "dxgi.lib")
 
+namespace
+{
+    constexpr int NVML_SUCCESS = 0;
+    constexpr UINT NVIDIA_VENDOR_ID = 0x10de;
+
+    HMODULE LoadNvml()
+    {
+        HMODULE module = LoadLibraryExW(L"nvml.dll", nullptr, LOAD_LIBRARY_SEARCH_SYSTEM32);
+        if (module != nullptr)
+            return module;
+
+        // 标准版 NVIDIA 驱动将 NVML 安装在 NVSMI 目录。
+        wchar_t path[MAX_PATH];
+        const DWORD length = ExpandEnvironmentStringsW(
+            L"%ProgramW6432%\\NVIDIA Corporation\\NVSMI\\nvml.dll", path, _countof(path));
+        if (length == 0 || length > _countof(path))
+            return nullptr;
+
+        return LoadLibraryExW(path, nullptr, LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR | LOAD_LIBRARY_SEARCH_SYSTEM32);
+    }
+
+    class CNvmlGpuUsage
+    {
+    public:
+        CNvmlGpuUsage()
+        {
+            if (m_module == nullptr)
+                return;
+
+            const auto init = reinterpret_cast<Init>(GetProcAddress(m_module, "nvmlInit_v2"));
+            m_shutdown = reinterpret_cast<Shutdown>(GetProcAddress(m_module, "nvmlShutdown"));
+            m_get_count = reinterpret_cast<GetCount>(GetProcAddress(m_module, "nvmlDeviceGetCount_v2"));
+            m_get_device = reinterpret_cast<GetDevice>(GetProcAddress(m_module, "nvmlDeviceGetHandleByIndex_v2"));
+            m_get_utilization = reinterpret_cast<GetUtilization>(GetProcAddress(m_module, "nvmlDeviceGetUtilizationRates"));
+            if (init && m_shutdown && m_get_count && m_get_device && m_get_utilization)
+                m_initialized = init() == NVML_SUCCESS;
+        }
+
+        ~CNvmlGpuUsage()
+        {
+            if (m_initialized)
+                m_shutdown();
+            if (m_module != nullptr)
+                FreeLibrary(m_module);
+        }
+
+        CNvmlGpuUsage(const CNvmlGpuUsage&) = delete;
+        CNvmlGpuUsage& operator=(const CNvmlGpuUsage&) = delete;
+
+        std::optional<int> GetUsage() const
+        {
+            unsigned int count = 0;
+            if (!m_initialized || m_get_count(&count) != NVML_SUCCESS || count == 0)
+                return std::nullopt;
+
+            int usage = -1;
+            for (unsigned int index = 0; index < count; ++index)
+            {
+                Device* device = nullptr;
+                Utilization utilization{};
+                if (m_get_device(index, &device) == NVML_SUCCESS
+                    && m_get_utilization(device, &utilization) == NVML_SUCCESS
+                    && utilization.gpu <= 100)
+                {
+                    usage = max(usage, static_cast<int>(utilization.gpu));
+                }
+            }
+            return usage;
+        }
+
+    private:
+        // 与 NVIDIA 驱动导出的 NVML 接口保持相同的 ABI。
+        struct Device;
+        struct Utilization
+        {
+            unsigned int gpu;
+            unsigned int memory;
+        };
+
+        using Init = int (__cdecl*)();
+        using Shutdown = int (__cdecl*)();
+        using GetCount = int (__cdecl*)(unsigned int*);
+        using GetDevice = int (__cdecl*)(unsigned int, Device**);
+        using GetUtilization = int (__cdecl*)(Device*, Utilization*);
+
+        HMODULE m_module = LoadNvml();
+        Shutdown m_shutdown{};
+        GetCount m_get_count{};
+        GetDevice m_get_device{};
+        GetUtilization m_get_utilization{};
+        bool m_initialized{};
+    };
+}
+
+std::optional<int> GetNvidiaGpuUsage()
+{
+    static const CNvmlGpuUsage nvml;
+    return nvml.GetUsage();
+}
+
 ///////////////////////////////////////////////////////////////////////////////////////////
 // CPdhGPUUsage 实现
 ///////////////////////////////////////////////////////////////////////////////////////////
@@ -64,6 +164,7 @@ bool CPdhGpuMemoryUsage::RefreshAdapters()
 
     m_factory.Release();
     m_capacity_by_luid.clear();
+    m_has_nvidia_adapter = false;
     if (FAILED(CreateDXGIFactory1(IID_PPV_ARGS(&m_factory))))
         return false;
 
@@ -80,8 +181,12 @@ bool CPdhGpuMemoryUsage::RefreshAdapters()
         }
 
         DXGI_ADAPTER_DESC1 desc{};
-        if (FAILED(adapter->GetDesc1(&desc)) || (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE)
-            || desc.DedicatedVideoMemory == 0)
+        if (FAILED(adapter->GetDesc1(&desc)) || (desc.Flags & DXGI_ADAPTER_FLAG_SOFTWARE))
+            continue;
+
+        if (desc.VendorId == NVIDIA_VENDOR_ID)
+            m_has_nvidia_adapter = true;
+        if (desc.DedicatedVideoMemory == 0)
             continue;
 
         CString luid;
@@ -94,7 +199,7 @@ bool CPdhGpuMemoryUsage::RefreshAdapters()
 int CPdhGpuMemoryUsage::GetUsage()
 {
     std::vector<CounterValueItem> values;
-    if (!isInitialized || !RefreshAdapters() || m_capacity_by_luid.empty() || !QueryValues(values))
+    if (!RefreshAdapters() || !isInitialized || m_capacity_by_luid.empty() || !QueryValues(values))
         return -1;
 
     std::map<std::wstring, double> usage_by_luid;
