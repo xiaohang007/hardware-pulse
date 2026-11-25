@@ -703,7 +703,7 @@ wstring CCommon::GetAppDataConfigDir()
     }
     wstring app_data_path{ pszAppDataPath };        //获取到C:/User/用户名/AppData/Roaming路径
     CreateDirectory(app_data_path.c_str(), NULL);       //如果Roaming不存在，则创建它
-    app_data_path += L"\\TrafficMonitor\\";
+    app_data_path += L"\\HardwarePulse\\";
     CreateDirectory(app_data_path.c_str(), NULL);       //如果C:/User/用户名/AppData/Roaming/TrafficMonitor不存在，则创建它
 
     return app_data_path;

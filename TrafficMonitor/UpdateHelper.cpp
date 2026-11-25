@@ -21,45 +21,11 @@ void CUpdateHelper::SetUpdateSource(UpdateSource update_source)
 bool CUpdateHelper::CheckForUpdate()
 {
     wstring version_info;
-    //使用GitHub更新源
-    if (m_update_source == UpdateSource::GitHubSource)
-    {
-        if (CCommon::GetURL(L"https://raw.githubusercontent.com/zhongyang219/TrafficMonitor/master/version_utf8.info", version_info, true))     //获取版本信息
-        {
-            m_row_data = true;
-        }
-        else if (CCommon::GetURL(L"https://github.com/zhongyang219/TrafficMonitor/blob/master/version_utf8.info", version_info, true))      //获取版本信息
-        {
-            m_row_data = false;
-        }
-        else
-        {
-            return false;
-        }
-
-        if (!m_row_data)
-        {
-            size_t index = version_info.find(L"﻿&lt;version&gt;");
-            if (index != std::wstring::npos)
-                version_info = version_info.substr(index);
-
-            CString str_version_info = version_info.c_str();
-            str_version_info.Replace(L"&lt;", L"<");
-            str_version_info.Replace(L"&gt;", L">");
-
-            version_info = str_version_info;
-        }
-    }
-    //使用Gitee更新源
-    else
-    {
-        if (!CCommon::GetURL(L"https://gitee.com/zhongyang219/TrafficMonitor/raw/master/version_utf8.info", version_info, true))     //获取版本信息
-            return false;
-    }
+    if (!CCommon::GetURL(L"https://raw.githubusercontent.com/xiaohang007/hardware-pulse/main/version_utf8.info", version_info, true))
+        return false;
 
     ParseUpdateInfo(version_info);
-
-    return true;
+    return !m_version.empty();
 }
 
 void CUpdateHelper::ParseUpdateInfo(wstring version_info)
@@ -82,7 +48,7 @@ void CUpdateHelper::ParseUpdateInfo(wstring version_info)
         }
     }
 
-    wstring str_source_tag = (m_update_source == UpdateSource::GitHubSource ? L"GitHub" : L"Gitee");
+    const wchar_t* str_source_tag = L"GitHub";
     wstring str_link_tag, str_link_tag_x64, str_link_tag_arm64ec;
 #ifdef WITHOUT_TEMPERATURE
     str_link_tag = L"link_without_temperature";
@@ -93,9 +59,9 @@ void CUpdateHelper::ParseUpdateInfo(wstring version_info)
     str_link_tag_x64 = L"link_x64";
     str_link_tag_arm64ec = L"link_arm64ec";
 #endif
-    m_link64 = version_xml.GetNode(str_link_tag_x64.c_str(), str_source_tag.c_str());
-    m_link = version_xml.GetNode(str_link_tag.c_str(), str_source_tag.c_str());
-    m_link_arm64ec = version_xml.GetNode(str_link_tag_arm64ec.c_str(), str_source_tag.c_str());
+    m_link64 = version_xml.GetNode(str_link_tag_x64.c_str(), str_source_tag);
+    m_link = version_xml.GetNode(str_link_tag.c_str(), str_source_tag);
+    m_link_arm64ec = version_xml.GetNode(str_link_tag_arm64ec.c_str(), str_source_tag);
 
     // Validate all download URLs: must use HTTPS and originate from a trusted domain.
     // This prevents a network-level attacker from injecting plain-HTTP or off-domain

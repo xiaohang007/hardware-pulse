@@ -55,6 +55,8 @@ public:
         int width{};        //宽度
         Alignment align{};  //对齐方式
         bool show{};        //是否显示
+        CRect usage_bar{ 0, 0, 0, 0 };
+        COLORREF usage_bar_color{};
     };
 
     //皮肤布局

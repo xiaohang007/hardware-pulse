@@ -67,7 +67,7 @@ void CTrafficMonitorApp::LoadConfig()
     CSettingsHelper ini;
 
     //常规设置
-    m_general_data.check_update_when_start = ini.GetBool(_T("general"), _T("check_update_when_start"), true);
+    m_general_data.check_update_when_start = ini.GetBool(_T("general"), _T("check_update_when_start"), false);
     //m_general_data.allow_skin_cover_font = ini.GetBool(_T("general"), _T("allow_skin_cover_font"), true);
     //m_general_data.allow_skin_cover_text = ini.GetBool(_T("general"), _T("allow_skin_cover_text"), true);
     m_general_data.show_all_interface = ini.GetBool(L"general", L"show_all_interface", false);
@@ -96,7 +96,7 @@ void CTrafficMonitorApp::LoadConfig()
     m_main_wnd_data.m_always_on_top = ini.GetBool(_T("config"), _T("always_on_top"), true);
     m_main_wnd_data.m_lock_window_pos = ini.GetBool(_T("config"), _T("lock_window_pos"), false);
     m_general_data.show_notify_icon = ini.GetBool(_T("config"), _T("show_notify_icon"), true);
-    m_cfg_data.m_show_more_info = ini.GetBool(_T("config"), _T("show_cpu_memory"), false);
+    m_cfg_data.m_show_more_info = ini.GetBool(_T("config"), _T("show_cpu_memory"), true);
     m_main_wnd_data.m_mouse_penetrate = ini.GetBool(_T("config"), _T("mouse_penetrate"), false);
     m_cfg_data.m_show_task_bar_wnd = ini.GetBool(_T("config"), _T("show_task_bar_wnd"), false);
     m_cfg_data.m_position_x = ini.GetInt(_T("config"), _T("position_x"), -1);
@@ -105,7 +105,7 @@ void CTrafficMonitorApp::LoadConfig()
     m_cfg_data.m_select_all = ini.GetBool(_T("connection"), _T("select_all"), false);
     m_cfg_data.m_hide_main_window = ini.GetBool(_T("config"), _T("hide_main_window"), false);
     m_cfg_data.m_connection_name = CCommon::UnicodeToStr(ini.GetString(L"connection", L"connection_name", L"").c_str());
-    m_cfg_data.m_skin_name = ini.GetString(_T("config"), _T("skin_selected"), _T(""));
+    m_cfg_data.m_skin_name = ini.GetString(_T("config"), _T("skin_selected"), _T("皮肤12"));
     if (m_cfg_data.m_skin_name.substr(0, 8) == L".\\skins\\")       //如果读取到的皮肤名称前面有".\\skins\\"，则把它删除。（用于和前一个版本保持兼容性）
         m_cfg_data.m_skin_name = m_cfg_data.m_skin_name.substr(7);
     CSkinManager::SkinNameNormalize(m_cfg_data.m_skin_name);
@@ -982,9 +982,9 @@ BOOL CTrafficMonitorApp::InitInstance()
     m_no_multistart_warning = ini.GetBool(_T("other"), _T("no_multistart_warning"), false);
     LPCTSTR mutex_name{};
 #ifdef _DEBUG
-    mutex_name = _T("TrafficMonitor-e8Ahk24HP6JC8hDy");
+    mutex_name = _T("HardwarePulse-Debug-1419J3XLKL1w8OZc");
 #else
-    mutex_name = _T("TrafficMonitor-1419J3XLKL1w8OZc");
+    mutex_name = _T("HardwarePulse-1419J3XLKL1w8OZc");
 #endif
     HANDLE hMutex = ::CreateMutex(NULL, TRUE, mutex_name);
     if (hMutex != NULL)

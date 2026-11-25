@@ -1416,6 +1416,8 @@ void CTrafficMonitorDlg::DoMonitorAcquisition()
         cpu_freq_acquired = true;
     //}
 
+    theApp.m_gpu_memory_usage = m_gpu_memory_usage_helper.GetUsage();
+
     //获取GPU利用率
     if (lite_version /*|| is_arm64ec*/ || !theApp.m_general_data.IsHardwareEnable(HI_GPU))
     {
@@ -2485,7 +2487,7 @@ void CTrafficMonitorDlg::OnShowCpuMemory()
     if (theApp.m_cfg_data.m_show_more_info)
     {
         rect.right = rect.left + m_skin.GetLayoutInfo().layout_l.width;
-        rect.bottom = rect.top + m_skin.GetLayoutInfo().layout_l.width;
+        rect.bottom = rect.top + m_skin.GetLayoutInfo().layout_l.height;
         MoveWindow(rect);
         CheckWindowPos();
     }

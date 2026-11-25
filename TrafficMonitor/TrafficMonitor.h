@@ -56,6 +56,7 @@ public:
     float m_gpu_temperature{ -1 };  //显卡温度
     float m_hdd_temperature{ -1 };  //硬盘温度
     float m_main_board_temperature{ -1 };    //主板温度
+    int m_gpu_memory_usage{ -1 };
     int m_gpu_usage{ -1 };      //显卡利用率
     int m_hdd_usage{ -1 };      //硬盘利用率
 

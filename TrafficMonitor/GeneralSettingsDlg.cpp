@@ -270,10 +270,8 @@ BOOL CGeneralSettingsDlg::OnInitDialog()
     }
     CheckDlgButton(IDC_SHOW_NOTIFY_ICON_CHECK, m_data.show_notify_icon);
 
-    if (m_data.update_source == 0)
-        CheckDlgButton(IDC_GITHUB_RADIO, TRUE);
-    else
-        CheckDlgButton(IDC_GITEE_RADIO, TRUE);
+    CheckDlgButton(IDC_GITHUB_RADIO, TRUE);
+    EnableDlgCtrl(IDC_GITEE_RADIO, false);
 
     //检查开始菜单的“启动”目录下有没有程序的快捷方式，如果有则设置开机自启动，然后删除快捷方式
     wstring start_up_path = CCommon::GetStartUpPath();

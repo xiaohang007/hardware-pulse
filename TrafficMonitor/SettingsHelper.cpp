@@ -118,7 +118,8 @@ void CSettingsHelper::SaveTaskbarWndColors(const wchar_t* AppName, const wchar_t
 
 void CSettingsHelper::LoadDisplayStr(const wchar_t* AppName, DispStrings& disp_str, bool is_main_window) const
 {
-    for (auto display_item : AllDisplayItems)
+    const auto& display_items = is_main_window ? AllSkinDisplayItems() : AllDisplayItems;
+    for (auto display_item : display_items)
     {
         std::wstring str{ CommonDisplayItem(display_item).DefaultString(is_main_window)};
         bool exist = GetString(AppName, CommonDisplayItem(display_item).GetItemIniKeyName(), str);

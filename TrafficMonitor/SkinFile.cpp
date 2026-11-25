@@ -29,7 +29,38 @@ static CSkinFile::LayoutItem LayoutItemFromXmlNode(tinyxml2::XMLElement* ele)
     layout_item.width = theApp.DPI(atoi(CTinyXml2Helper::ElementAttribute(ele, "width")));
     layout_item.align = static_cast<CSkinFile::Alignment>(atoi(CTinyXml2Helper::ElementAttribute(ele, "align")));
     layout_item.show = CTinyXml2Helper::StringToBool(CTinyXml2Helper::ElementAttribute(ele, "show"));
+    if (auto* bar = ele->FirstChildElement("usage_bar"))
+    {
+        const CPoint position(theApp.DPI(bar->IntAttribute("x")), theApp.DPI(bar->IntAttribute("y")));
+        const CSize size(theApp.DPI(bar->IntAttribute("width")), theApp.DPI(bar->IntAttribute("height")));
+        layout_item.usage_bar = CRect(position, size);
+        layout_item.usage_bar_color = bar->UnsignedAttribute("color");
+    }
     return layout_item;
+}
+
+static int GetUsageBarValue(DisplayItem item)
+{
+    switch (item)
+    {
+    case TDI_CPU: return theApp.m_cpu_usage;
+    case TDI_MEMORY: return theApp.m_memory_usage;
+    case TDI_GPU_USAGE: return theApp.m_gpu_usage;
+    case TDI_GPU_MEMORY_USAGE: return theApp.m_gpu_memory_usage;
+    case TDI_HDD_USAGE: return theApp.m_hdd_usage;
+    default: return -1;
+    }
+}
+
+static void DrawUsageBar(IDrawCommon& drawer, const CSkinFile::LayoutItem& item, int usage, CPoint offset)
+{
+    CRect fill = item.usage_bar;
+    if (fill.IsRectEmpty() || usage <= 0)
+        return;
+
+    fill.top = fill.bottom - max(1, MulDiv(fill.Height(), min(usage, 100), 100));
+    fill.OffsetRect(offset);
+    drawer.FillRect(fill, item.usage_bar_color);
 }
 
 CSkinFile::Layout CSkinFile::LayoutFromXmlNode(tinyxml2::XMLElement* ele)
@@ -40,7 +71,7 @@ CSkinFile::Layout CSkinFile::LayoutFromXmlNode(tinyxml2::XMLElement* ele)
     CTinyXml2Helper::IterateChildNode(ele, [&](tinyxml2::XMLElement* ele_layout_item)
         {
             string str_layout_item = CTinyXml2Helper::ElementName(ele_layout_item);
-            for (auto display_item : AllDisplayItems)
+            for (auto display_item : AllSkinDisplayItems())
             {
                 if (str_layout_item == CSkinFile::GetDisplayItemXmlNodeName(display_item))
                 {
@@ -277,7 +308,7 @@ bool CSkinFile::LoadFromXml(const wstring& file_path)
         std::string node_name = display_text_item.first;
         std::wstring item_text = display_text_item.second;
         //查找内建显示项目
-        for (auto display_item : AllDisplayItems)
+        for (auto display_item : AllSkinDisplayItems())
         {
             if (node_name == CSkinFile::GetDisplayItemXmlNodeName(display_item))
             {
@@ -495,6 +526,7 @@ void CSkinFile::DrawPreview(CDC* pDC, CRect rect)
                     CRect rect(point, CSize(layout_item.width, m_layout_info.text_height));
                     COLORREF text_color{};
                     text_color = text_colors[iter->first];
+                    DrawUsageBar(draw, layout_item, _ttoi(iter->second.value), CPoint(pos.x, pos.y));
                     DrawSkinText(draw, iter->second, rect, text_color, layout_item.align);
                 }
             }
@@ -619,7 +651,7 @@ void CSkinFile::DrawItemsInfo(IDrawCommon& drawer, Layout& layout, CFont& font) 
 {
     //获取每个项目显示的文本和数值文本
     std::map<DisplayItem, DrawStr> map_str;
-    for (const auto& display_item : AllDisplayItems)
+    for (const auto& display_item : AllSkinDisplayItems())
     {
         if (!m_layout_info.no_label)
             map_str[display_item].label = theApp.m_main_wnd_data.disp_str.GetConst(display_item).c_str();
@@ -634,7 +666,9 @@ void CSkinFile::DrawItemsInfo(IDrawCommon& drawer, Layout& layout, CFont& font) 
     }
     else if (!theApp.m_main_wnd_data.text_colors.empty())
     {
-        for (const auto& item : theApp.m_plugins.AllDisplayItemsWithPlugins())
+        std::set<CommonDisplayItem> skin_items;
+        GetSkinDisplayItems(skin_items);
+        for (const auto& item : skin_items)
         {
             text_colors[item] = theApp.m_main_wnd_data.text_colors.begin()->second;
         }
@@ -657,6 +691,12 @@ void CSkinFile::DrawItemsInfo(IDrawCommon& drawer, Layout& layout, CFont& font) 
             COLORREF text_color = text_colors[iter->first];
 
             //绘制文本
+            if (!layout_item.usage_bar.IsRectEmpty())
+            {
+                const int usage = GetUsageBarValue(iter->first);
+                DrawUsageBar(drawer, layout_item, usage, CPoint(0, 0));
+                map_str[iter->first].value = CCommon::UsageToString(usage, theApp.m_main_wnd_data);
+            }
             DrawSkinText(drawer, map_str[iter->first], rect, text_color, layout_item.align);
         }
         index++;
@@ -735,6 +775,8 @@ string CSkinFile::GetDisplayItemXmlNodeName(DisplayItem display_item)
     case TDI_GPU_USAGE:
         return "gpu";
         break;
+    case TDI_GPU_MEMORY_USAGE:
+        return "gpu_memory";
     case TDI_CPU_TEMP:
         return "cpu_temperature";
         break;

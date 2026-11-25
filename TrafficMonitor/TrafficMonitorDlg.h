@@ -69,6 +69,7 @@ protected:
     CCPUUsage m_cpu_usage_helper;
     CPdhCpuFreq m_cpu_freq_helper;
     CPdhGPUUsage m_gpu_usage_helper;
+    CPdhGpuMemoryUsage m_gpu_memory_usage_helper;
     CPdhDiskUsage m_disk_usage_helper;
 
     bool m_get_disk_usage_by_pdh{};

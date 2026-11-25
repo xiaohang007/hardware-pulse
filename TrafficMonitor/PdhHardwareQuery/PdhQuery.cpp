@@ -69,7 +69,9 @@ bool CPdhQuery::QueryValues(std::vector<CounterValueItem>& values)
         return false;
 
     //更新数据
-    PdhCollectQueryData(query);
+    if (PdhCollectQueryData(query) != ERROR_SUCCESS)
+        return false;
+
     DWORD dwBufferSize = 0;         // Size of the pItems buffer
     DWORD dwItemCount = 0;          // Number of items in the pItems buffer
     PDH_FMT_COUNTERVALUE_ITEM* pItems = NULL;
@@ -85,20 +87,19 @@ bool CPdhQuery::QueryValues(std::vector<CounterValueItem>& values)
                 // Loop through the array and print the instance name and counter value.
                 for (DWORD i = 0; i < dwItemCount; i++)
                 {
+                    const auto counter_status = pItems[i].FmtValue.CStatus;
+                    if (counter_status != PDH_CSTATUS_VALID_DATA && counter_status != PDH_CSTATUS_NEW_DATA)
+                        continue;
+
                     CounterValueItem value_item;
                     value_item.name = pItems[i].szName;
                     value_item.value = pItems[i].FmtValue.doubleValue;
                     values.push_back(value_item);
                 }
             }
-            else
-            {
-                return false;
-            }
-
             free(pItems);
-            pItems = NULL;
-            dwBufferSize = dwItemCount = 0;
+            if (status != ERROR_SUCCESS)
+                return false;
         }
         else
         {

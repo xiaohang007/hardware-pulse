@@ -16,7 +16,8 @@ enum DisplayItem
     TDI_HDD_USAGE,
     TDI_TOTAL_SPEED,
     TDI_CPU_FREQ,
-    TDI_TODAY_TRAFFIC
+    TDI_TODAY_TRAFFIC,
+    TDI_GPU_MEMORY_USAGE
 };
 
 //所有内置显示项目的集合
@@ -28,6 +29,9 @@ const std::set<DisplayItem> AllDisplayItems
 #endif
     , TDI_HDD_USAGE, TDI_CPU_FREQ, TDI_TOTAL_SPEED, TDI_TODAY_TRAFFIC
 };
+
+// 主窗口还支持显存利用率。
+const std::set<DisplayItem>& AllSkinDisplayItems();
 
 //显示的项目
 class CommonDisplayItem
