@@ -84,9 +84,6 @@ public:
     */
     static BOOL CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName = NULL, LPCTSTR lpszLnkFileName = NULL, LPCTSTR lpszWorkDir = NULL, WORD wHotkey = 0, LPCTSTR lpszDescription = NULL, int iShowCmd = SW_SHOWNORMAL);
 
-    //获取开始菜单“所有程序”中的“启动”目录的路径
-    static wstring GetStartUpPath();
-
     //获取path路径下的文件或文件夹，并将文件或文件夹名称保存在files容器中。
     static void GetFiles(const wchar_t* path, vector<wstring>& files);
 

@@ -273,43 +273,22 @@ BOOL CGeneralSettingsDlg::OnInitDialog()
     CheckDlgButton(IDC_GITHUB_RADIO, TRUE);
     EnableDlgCtrl(IDC_GITEE_RADIO, false);
 
-    //检查开始菜单的“启动”目录下有没有程序的快捷方式，如果有则设置开机自启动，然后删除快捷方式
-    wstring start_up_path = CCommon::GetStartUpPath();
-    bool shortcut_exist = CCommon::FileExist((start_up_path + L"\\TrafficMonitor.lnk").c_str());
-    m_data.auto_run = false;
 #ifdef WITHOUT_TEMPERATURE
     m_data.auto_run_by_task_scheduler = false;
 #else
     m_data.auto_run_by_task_scheduler = true;
 #endif
 
-    if (shortcut_exist)
+    //打开设置时只读取当前程序的开机自启动状态。
+    m_data.auto_run = theApp.GetAutoRun(&m_auto_run_path, false);
+    if (m_data.auto_run)
     {
-        theApp.SetAutoRun(true, false);
-        m_data.auto_run = true;
-        DeleteFile((start_up_path + L"\\TrafficMonitor.lnk").c_str());
-        CheckDlgButton(IDC_AUTO_RUN_METHOD_REGESTRY_RADIO, TRUE);
+        m_data.auto_run_by_task_scheduler = false;
     }
-    //检查开机自动运行的设置是通过注册表还是任务计划程序实现的，并设置相应的选项
-    else
+    else if (theApp.GetAutoRun(&m_auto_run_path, true))
     {
-        bool auto_run_by_registry = theApp.GetAutoRun(&m_auto_run_path, false);
-        if (auto_run_by_registry)
-        {
-            CheckDlgButton(IDC_AUTO_RUN_METHOD_REGESTRY_RADIO, TRUE);
-            m_data.auto_run = true;
-            m_data.auto_run_by_task_scheduler = false;
-        }
-        else
-        {
-            bool auto_run_by_task_scheduler = theApp.GetAutoRun(&m_auto_run_path, true);
-            if (auto_run_by_task_scheduler)
-            {
-                CheckDlgButton(IDC_AUTO_RUN_METHOD_TASK_SCHEDULE_RADIO, TRUE);
-                m_data.auto_run = true;
-                m_data.auto_run_by_task_scheduler = true;
-            }
-        }
+        m_data.auto_run = true;
+        m_data.auto_run_by_task_scheduler = true;
     }
     if (m_data.auto_run_by_task_scheduler)
         CheckDlgButton(IDC_AUTO_RUN_METHOD_TASK_SCHEDULE_RADIO, TRUE);

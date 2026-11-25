@@ -663,7 +663,7 @@ bool CTrafficMonitorApp::GetAutoRun(wstring* auto_run_path, bool task_scheduler)
     {
         //使用添加注册表项的方式实现开机自启动
         CRegKey key;
-        if (key.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run")) != ERROR_SUCCESS)
+        if (key.Open(HKEY_CURRENT_USER, _T("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), KEY_QUERY_VALUE) != ERROR_SUCCESS)
         {
             //打开注册表“Software\\Microsoft\\Windows\\CurrentVersion\\Run”失败，则返回false
             return false;
@@ -677,9 +677,9 @@ bool CTrafficMonitorApp::GetAutoRun(wstring* auto_run_path, bool task_scheduler)
                 //保存路径
                 *auto_run_path = buff;
                 //去掉前后的引号
-                if (auto_run_path->front() == L'\"')
-                    *auto_run_path = auto_run_path->substr(1);
-                if (auto_run_path->back() = L'\"')
+                if (!auto_run_path->empty() && auto_run_path->front() == L'\"')
+                    auto_run_path->erase(0, 1);
+                if (!auto_run_path->empty() && auto_run_path->back() == L'\"')
                     auto_run_path->pop_back();
             }
             return (m_module_path_reg == buff); //如果“TrafficMonitor”的值是当前程序的路径，就返回true，否则返回false

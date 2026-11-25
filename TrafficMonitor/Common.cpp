@@ -546,18 +546,6 @@ BOOL CCommon::CreateFileShortcut(LPCTSTR lpszLnkFileDir, LPCTSTR lpszFileName, L
     return SUCCEEDED(hr);
 }
 
-wstring CCommon::GetStartUpPath()
-{
-    LPITEMIDLIST ppidl;
-    TCHAR pszStartUpPath[MAX_PATH]{};
-    if (SHGetSpecialFolderLocation(NULL, CSIDL_STARTUP, &ppidl) == S_OK)
-    {
-        SHGetPathFromIDList(ppidl, pszStartUpPath);
-        CoTaskMemFree(ppidl);
-    }
-    return wstring(pszStartUpPath);
-}
-
 void CCommon::GetFiles(const wchar_t* path, vector<wstring>& files)
 {
     //文件句柄
